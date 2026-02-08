@@ -21,7 +21,7 @@ fun NavGraph() {
         }
 
         composable(Screen.GroceryListScreen.route) {
-            GroceryListScreen()
+            GroceryListScreen(navController = navController)
         }
 
         composable(Screen.NotesScreen.route) {

@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.caltlab.quickvox.navigation.NavGraph
 import com.caltlab.quickvox.ui.components.AppNameHeader
 import com.caltlab.quickvox.ui.theme.QuickVoxTheme
 
@@ -29,9 +30,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             QuickVoxTheme {
-//                Scaffold(modifier = Modifier.fillMaxSize()) {
-                    AppNameHeader()
-//                }
+                NavGraph()
             }
         }
     }
