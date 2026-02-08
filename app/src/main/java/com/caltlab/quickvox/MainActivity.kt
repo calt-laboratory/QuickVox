@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.caltlab.quickvox.ui.components.AppNameHeader
 import com.caltlab.quickvox.ui.theme.QuickVoxTheme
 
 class MainActivity : ComponentActivity() {
@@ -35,37 +37,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun AppNameHeader() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(top = 70.dp)
-    ) {
-        Text(
-            text = "QuickVox",
-            color = Color.DarkGray,
-            fontSize = 30.sp,
-            modifier = Modifier.align(Alignment.Center)
-        )
-    }
-}
 
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+//@Composable
+//fun GroceryList() {
+//    Column() {
+//
+//    }
+//}
 
-@Preview(showBackground = true)
-@Composable
-fun QuickVoxPreview() {
-    QuickVoxTheme {
-        AppNameHeader()
-//        Greeting("Android")
-    }
-}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun QuickVoxPreview() {
+//    QuickVoxTheme {
+//        AppNameHeader()
+////        Greeting("Android")
+//    }
+//}
