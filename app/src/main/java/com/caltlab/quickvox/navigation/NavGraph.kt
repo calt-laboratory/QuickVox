@@ -25,7 +25,7 @@ fun NavGraph() {
         }
 
         composable(Screen.NotesScreen.route) {
-            NotesScreen()
+            NotesScreen(navController = navController)
         }
     }
 }
