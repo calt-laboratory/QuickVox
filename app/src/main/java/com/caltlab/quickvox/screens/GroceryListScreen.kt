@@ -30,15 +30,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroceryListScreen(navController: NavController) {
     var inputText by remember { mutableStateOf("") }
-    var groceryItems = remember { mutableStateListOf<String>() }
+
+    val context = LocalContext.current
+    var groceryItems = remember {
+        mutableStateListOf<String>().apply {
+            addAll(loadGroceryItems(context))
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -76,6 +84,7 @@ fun GroceryListScreen(navController: NavController) {
                         onClick = {
                             if (inputText.isNotBlank()) {
                                 groceryItems.add(inputText.trim())
+                                saveGroceryItems(context, groceryItems)
                                 inputText = ""
                             }
                         }) {
@@ -93,7 +102,11 @@ fun GroceryListScreen(navController: NavController) {
                     Text(
                         text = item, modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = { groceryItems.removeAt(idx) }) {
+                    IconButton(onClick = {
+                        groceryItems.removeAt(idx)
+                        saveGroceryItems(context, groceryItems)
+                        }
+                    ) {
                         Icon(
                             Icons.Default.Close, contentDescription = "Delete"
                         )
@@ -102,4 +115,18 @@ fun GroceryListScreen(navController: NavController) {
             }
         }
     }
+}
+
+private fun saveGroceryItems(context: android.content.Context, items: List<String>) {
+    val sharedPreferences =
+        context.getSharedPreferences("grocery", android.content.Context.MODE_PRIVATE)
+    val jsonString = Json.encodeToString(items)
+    sharedPreferences.edit().putString("items", jsonString).apply()
+}
+
+private fun loadGroceryItems(context: android.content.Context): List<String> {
+    val sharedPreferences =
+        context.getSharedPreferences("grocery", android.content.Context.MODE_PRIVATE)
+    val jsonString = sharedPreferences.getString("items", null) ?: return emptyList()
+    return Json.decodeFromString<List<String>>(jsonString)
 }
