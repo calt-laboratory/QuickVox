@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.caltlab.quickvox.screens.GroceryListScreen
 import com.caltlab.quickvox.screens.MainScreen
 import com.caltlab.quickvox.screens.NotesScreen
+import com.caltlab.quickvox.screens.VoiceGroceryListScreen
 
 @Composable
 fun NavGraph() {
@@ -20,7 +21,11 @@ fun NavGraph() {
             MainScreen(navController = navController)
         }
 
-        composable(Screen.GroceryListScreen.route) {
+        composable(Screen.VoiceGroceryListScreen.route) {
+            VoiceGroceryListScreen(navController = navController)
+        }
+
+        composable(Screen.TextGroceryListScreen.route) {
             GroceryListScreen(navController = navController)
         }
 

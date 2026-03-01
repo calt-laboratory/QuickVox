@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.serialization.json.Json
 
+// @OptIn(ExperimentalMaterial3Api::class) required because TopAppBar is still experimental in
+// Material3
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroceryListScreen(navController: NavController) {

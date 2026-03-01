@@ -19,7 +19,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Voice Generated Grocery List") },
+                title = { Text(text = "Grocery List (Voice)") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
