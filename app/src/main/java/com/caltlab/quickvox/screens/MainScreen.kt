@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -51,6 +52,8 @@ fun MainScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
+                    // Pre-built Material icon: Edit = pencil
+                    // Default = filled style
                     Icons.Default.Edit,
                     // null because the icon is decorative; the card text already describes the
                     // action for the user
@@ -74,11 +77,35 @@ fun MainScreen(navController: NavController) {
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        Button(
+        ElevatedCard(
             onClick = { navController.navigate(Screen.NotesScreen.route) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "Notes")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column{
+                    Text(
+                        text = "Notes",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Quick voice notes",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }
