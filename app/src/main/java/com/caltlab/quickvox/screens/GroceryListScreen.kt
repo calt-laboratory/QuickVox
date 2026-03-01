@@ -48,6 +48,9 @@ fun GroceryListScreen(navController: NavController) {
     var inputText by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    // Bridge between Compose and the Android OS
+    // Needed to access system APIs like file storage, permissions, system services, ...
+    // Without this, Compose has no way to interact with the OS on its own
     val context = LocalContext.current
     var groceryItems = remember {
         mutableStateListOf<String>().apply {
@@ -68,7 +71,9 @@ fun GroceryListScreen(navController: NavController) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                // Vertical spacing so the list doesn't hide behind the TopAppBar
                 .padding(paddingValues)
+                // Left/right spacing so content doesn't stick to the screen edges
                 .padding(horizontal = 16.dp)
         ) {
             // item {} adds a single entry to the LazyColumn's scrollable list
@@ -107,6 +112,7 @@ fun GroceryListScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 16.dp),
+                        // Pushes children = row items to the right (default would be left)
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(
@@ -127,6 +133,7 @@ fun GroceryListScreen(navController: NavController) {
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // weight(1f) = take up all remaining space, pushing the X button to the right
                     Text(
                         text = item, modifier = Modifier.weight(1f)
                     )
