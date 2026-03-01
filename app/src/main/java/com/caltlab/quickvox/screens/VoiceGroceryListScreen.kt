@@ -1,9 +1,15 @@
 package com.caltlab.quickvox.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,9 +79,19 @@ fun VoiceGroceryListScreen(navController: NavController) {
         hasPermission = granted
     }
 
+    val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
+    // DisposableEffect = Compose lifecycle block that runs cleanup code
+    DisposableEffect(Unit) {
+        // onDispose is called when the user leaves this screen (e.g. back button)
+        onDispose {
+            // destroy() deletes the recognizer object and frees its system resources
+            // If it's still recording, the recording stops too, but that's just a side effect
+            // The main purpose is cleanup: free memory when leaving the screen
+            speechRecognizer.destroy()
+        }
+    }
 
-
-    val grocerItems = remember {
+    val groceryItems = remember {
         mutableStateListOf<String>().apply {
             addAll(loadVoiceGroceryItems(context))
         }
@@ -115,8 +131,61 @@ fun VoiceGroceryListScreen(navController: NavController) {
                             if (!hasPermission) {
                                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             } else {
-                                // Toggles between recording and not recording
-                                isRecording = !isRecording
+                                // Tell the recognizer what to do when something happens
+                                // (results, errors, etc.)
+                                // object : RecognitionListener creates an anonymous object that
+                                // implements the interface
+                                speechRecognizer.setRecognitionListener(object : RecognitionListener {
+
+                                    // Called when speech recognition is finished and text is ready
+                                    override fun onResults(results: Bundle?) {
+                                        // Get the list of recognized texts from the Bundle
+                                        val matches = results?.getStringArrayList(
+                                            SpeechRecognizer.RESULTS_RECOGNITION
+                                        )
+
+                                        // Take the best match, or exit if nothing was recognized
+                                        val spokenText = matches?.firstOrNull() ?: return
+
+                                        // Split by commas, "and", "und" to add multiple items
+                                        // e.g. "milk, bread and eggs" → ["milk", "bread", "eggs"]
+                                        val items = spokenText
+                                            .split(",", " and ", " und ")
+                                            .map { it.trim() }
+                                            .filter { it.isNotBlank() }  // remove empty entries
+
+                                        groceryItems.addAll(items)
+                                        saveVoiceGroceryItems(context, groceryItems)
+                                        isRecording = false
+                                    }
+                                    // Called when an error occurs, reset button back to "Record"
+                                    override fun onError(error: Int) { isRecording = false}
+
+                                    // Required by the interface but not needed for our use case
+                                    override fun onReadyForSpeech(p0: Bundle?) {}
+                                    override fun onBeginningOfSpeech() {}
+                                    override fun onEndOfSpeech() {}
+                                    override fun onRmsChanged(rmsdB: Float) {}
+                                    override fun onBufferReceived(buffer: ByteArray?) {}
+                                    override fun onPartialResults(partialResults: Bundle?) {}
+                                    override fun onEvent(eventType: Int, params: Bundle?) {}
+                                })
+
+                                // Intent = message to Android: "I want to recognize speech"
+                                // .apply {} configures it right after creation
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    // Use free-form speech model (normal talking, not web search)
+                                    putExtra(
+                                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                    )
+                                    // Only return the 1 best result
+                                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                }
+
+                                // Start listening with the configured intent
+                                speechRecognizer.startListening(intent)
+                                isRecording = true
                             }
                         },
                         // Red button when recording, default color when idle
@@ -140,7 +209,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     }
                 }
             }
-            if (grocerItems.isNotEmpty()) {
+            if (groceryItems.isNotEmpty()) {
                 item {
                     Row(
                         modifier = Modifier
@@ -158,7 +227,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                 }
             }
 
-            itemsIndexed(grocerItems) { idx, item ->
+            itemsIndexed(groceryItems) { idx, item ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -170,8 +239,8 @@ fun VoiceGroceryListScreen(navController: NavController) {
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = {
-                        grocerItems.removeAt(idx)
-                        saveVoiceGroceryItems(context, grocerItems)
+                        groceryItems.removeAt(idx)
+                        saveVoiceGroceryItems(context, groceryItems)
                     }) {
                         Icon(
                             Icons.Default.Close,
@@ -189,15 +258,16 @@ fun VoiceGroceryListScreen(navController: NavController) {
                 text = { Text("This will remove all items from the list") },
                 confirmButton = {
                     TextButton(onClick = {
-                        grocerItems.clear()
-                        saveVoiceGroceryItems(context, grocerItems)
+                        groceryItems.clear()
+                        saveVoiceGroceryItems(context, groceryItems)
                         showDeleteDialog = false
                     }) {
                         Text("Delete")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false }) {
+                    TextButton(onClick = { showDeleteDialog = false
+                    }) {
                         Text("Cancel")
                     }
                 }
