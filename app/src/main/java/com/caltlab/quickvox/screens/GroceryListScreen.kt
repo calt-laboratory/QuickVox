@@ -16,6 +16,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,6 +24,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +44,7 @@ import kotlinx.serialization.json.Json
 @Composable
 fun GroceryListScreen(navController: NavController) {
     var inputText by remember { mutableStateOf("") }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     var groceryItems = remember {
@@ -105,10 +108,7 @@ fun GroceryListScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.End
                     ) {
                         IconButton(
-                            onClick = {
-                                groceryItems.clear()
-                                saveGroceryItems(context, groceryItems)
-                            }) {
+                            onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "Delete all items"
@@ -131,14 +131,36 @@ fun GroceryListScreen(navController: NavController) {
                     IconButton(onClick = {
                         groceryItems.removeAt(idx)
                         saveGroceryItems(context, groceryItems)
-                    }
-                    ) {
+                    }) {
                         Icon(
                             Icons.Default.Close, contentDescription = "Delete"
                         )
                     }
                 }
             }
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                // onDismissRequest = {} Called when the user taps outside the dialog or presses the
+                // back button
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete All Items?") },
+                text = { Text("This will remove all items from the list") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        groceryItems.clear()
+                        saveGroceryItems(context, groceryItems)
+                        showDeleteDialog = false
+                    }) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                })
         }
     }
 }
