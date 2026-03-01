@@ -1,5 +1,9 @@
 package com.caltlab.quickvox.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,6 +54,27 @@ fun VoiceGroceryListScreen(navController: NavController) {
 
     val context = LocalContext.current
 
+    // Checks on screen start if the app already has microphone permission (true/false)
+    var hasPermission by remember {
+        mutableStateOf(
+            // Asks the OS: "Does this app have microphone permission?"
+            context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                    // PackageManager = Android's system that manages all installed apps and their
+                    // permissions
+                    // PERMISSION_GRANTED is just a constant (value 0) meaning "yes, allowed"
+                    PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    // Opens the system permission dialog when the user presses Record, then saves the user's choice
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasPermission = granted
+    }
+
+
+
     val grocerItems = remember {
         mutableStateListOf<String>().apply {
             addAll(loadVoiceGroceryItems(context))
@@ -85,8 +110,15 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Button(
-                        // Toggles between recording and not recording
-                        onClick = { isRecording = !isRecording },
+                        onClick = {
+                            // Request permission first
+                            if (!hasPermission) {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            } else {
+                                // Toggles between recording and not recording
+                                isRecording = !isRecording
+                            }
+                        },
                         // Red button when recording, default color when idle
                         colors = if (isRecording) {
                             ButtonDefaults.buttonColors(
