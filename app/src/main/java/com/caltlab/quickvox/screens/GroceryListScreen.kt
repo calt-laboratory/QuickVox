@@ -2,6 +2,7 @@ package com.caltlab.quickvox.screens
 
 import android.R.attr.navigationIcon
 import android.R.attr.title
+import androidx.core.content.edit
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -105,7 +106,7 @@ fun GroceryListScreen(navController: NavController) {
                     IconButton(onClick = {
                         groceryItems.removeAt(idx)
                         saveGroceryItems(context, groceryItems)
-                        }
+                    }
                     ) {
                         Icon(
                             Icons.Default.Close, contentDescription = "Delete"
@@ -118,15 +119,35 @@ fun GroceryListScreen(navController: NavController) {
 }
 
 private fun saveGroceryItems(context: android.content.Context, items: List<String>) {
-    val sharedPreferences =
-        context.getSharedPreferences("grocery", android.content.Context.MODE_PRIVATE)
+    // SharedPreferences is a simple key-value storage, saved as an XML file on the device
+    // Data is kept even after closing the app
+    // Only this app can access it (MODE_PRIVATE)
+    // "grocery" is the name of the SharedPreferences file
+    val sharedPreferences = context.getSharedPreferences(
+        "grocery",
+        android.content.Context.MODE_PRIVATE,
+    )
+
+    // Convert to JSON string
     val jsonString = Json.encodeToString(items)
-    sharedPreferences.edit().putString("items", jsonString).apply()
+
+    // edit {} opens the editor for editing the SharedPreferences, calls apply() automatically
+    // putString() saves the JSON string under the key "items"
+    // apply() writes the change in the background (async) to the file
+    sharedPreferences.edit {
+        putString("items", jsonString)
+    }
 }
 
 private fun loadGroceryItems(context: android.content.Context): List<String> {
     val sharedPreferences =
         context.getSharedPreferences("grocery", android.content.Context.MODE_PRIVATE)
+
+    // getString() reads the value under the key "items", returns null if nothing is saved
+    // ?: is the Elvis operator: if the left side is null, execute the right side instead
+    // -> if nothing is saved, exit the function early and return an empty list
     val jsonString = sharedPreferences.getString("items", null) ?: return emptyList()
+
+    // Convert the JSON string back to a list of strings
     return Json.decodeFromString<List<String>>(jsonString)
 }
