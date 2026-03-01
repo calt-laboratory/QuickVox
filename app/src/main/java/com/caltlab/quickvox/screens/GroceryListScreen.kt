@@ -104,17 +104,20 @@ fun GroceryListScreen(navController: NavController) {
                             .padding(bottom = 16.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        OutlinedButton(
+                        IconButton(
                             onClick = {
                                 groceryItems.clear()
                                 saveGroceryItems(context, groceryItems)
-                            }
-                        ) {
-                            Text("Delete All")
+                            }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Delete all items"
+                            )
                         }
                     }
                 }
             }
+
             itemsIndexed(groceryItems) { idx, item ->
                 Row(
                     modifier = Modifier
