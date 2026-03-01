@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +66,7 @@ fun GroceryListScreen(navController: NavController) {
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
+            // item {} adds a single entry to the LazyColumn's scrollable list
             item {
                 Row(
                     modifier = Modifier
@@ -90,6 +92,26 @@ fun GroceryListScreen(navController: NavController) {
                             }
                         }) {
                         Text("Add")
+                    }
+                }
+            }
+
+            if (groceryItems.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                groceryItems.clear()
+                                saveGroceryItems(context, groceryItems)
+                            }
+                        ) {
+                            Text("Delete All")
+                        }
                     }
                 }
             }
