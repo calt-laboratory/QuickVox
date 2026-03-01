@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
@@ -38,8 +39,42 @@ fun MainScreen(navController: NavController) {
         AppNameHeader()
 
         Spacer(modifier = Modifier.height(32.dp))
+
         ElevatedCard(
-            onClick = { navController.navigate(Screen.GroceryListScreen.route) },
+            onClick = { navController.navigate(Screen.VoiceGroceryListScreen.route) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Mic,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp)
+                    )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = "Grocery List (Voice)",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Add items by voice",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        ElevatedCard(
+            onClick = { navController.navigate(Screen.TextGroceryListScreen.route) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -77,6 +112,7 @@ fun MainScreen(navController: NavController) {
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+
         ElevatedCard(
             onClick = { navController.navigate(Screen.NotesScreen.route) },
             modifier = Modifier.fillMaxWidth()
