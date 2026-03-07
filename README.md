@@ -1,10 +1,5 @@
 # QuickVox
 
-An Android app for learning Kotlin and Jetpack Compose while building something genuinely useful.
-QuickVox combines voice-based and text-based input methods across multiple mini-projects, all within a single app.
-
-## Projects
-
 ### 1. Grocery List (Text-Based)
 
 A simple grocery list where items are added via text input.
