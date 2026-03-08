@@ -110,27 +110,29 @@ fun GroceryListScreen(navController: NavController) {
                     OutlinedButton(
                         onClick = {
                             val trimmedInputText = inputText.trim()
-                            if (trimmedInputText.isNotBlank()) {
 
-                                // any {} iterates through the list and returns true if at least one
-                                // element matches the condition
-                                if (groceryItems.any { it.equals(trimmedInputText, ignoreCase = true) }) {
+                            if (trimmedInputText.isBlank()) return@OutlinedButton
 
-                                    // launch {} starts a coroutine so the suspend fn showSnackbar()
-                                    // can be called
-                                    // showSnackbar() suspends (waits) until the snackbar is
-                                    // dismissed, without blocking the UI
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("\"$trimmedInputText\" is already in the list")
-                                    }
-                                    // Labeled return: exits only the onClick lambda
-                                    // Without the label, return would try to exit GroceryListScreen
-                                    return@OutlinedButton
+                            // any {} iterates through the list and returns true if at least one
+                            // element matches the condition
+                            if (groceryItems.any { it.equals(trimmedInputText, ignoreCase = true) }) {
+
+                                // launch {} starts a coroutine so the suspend fn showSnackbar()
+                                // can be called
+                                // showSnackbar() suspends (waits) until the snackbar is
+                                // dismissed, without blocking the UI
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("\"$trimmedInputText\" is already in the list")
                                 }
-                                groceryItems.add(trimmedInputText)
-                                saveGroceryItems(context, groceryItems)
-                                inputText = ""
+                                // Labeled return: exits only the onClick lambda
+                                // Without the label, return would try to exit GroceryListScreen
+                                return@OutlinedButton
                             }
+
+                            groceryItems.add(trimmedInputText)
+                            saveGroceryItems(context, groceryItems)
+                            inputText = ""
+
                         }) {
                         Text("Add")
                     }

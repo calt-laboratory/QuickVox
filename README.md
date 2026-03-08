@@ -9,7 +9,6 @@ Items are persisted locally.
 **Status:** Complete
 
 **Planned improvements:**
-- Duplicate detection — prevent adding items that are already on the list
 - Highlight animation for newly added items
 
 ---
