@@ -31,13 +31,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 // @OptIn(ExperimentalMaterial3Api::class) required because TopAppBar is still experimental in
@@ -47,10 +52,15 @@ import kotlinx.serialization.json.Json
 fun GroceryListScreen(navController: NavController) {
     var inputText by remember { mutableStateOf("") }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Bridge between Compose and the Android OS
+    // rememberCoroutineScope() is needed to call suspend functions (like showSnackbar) from regular
+    // code (like onClick)
+    val coroutineScope = rememberCoroutineScope()
+
+    // LocalContext = Bridge between Compose and the Android OS
     // Needed to access system APIs like file storage, permissions, system services, ...
-    // Without this, Compose has no way to interact with the OS on its own
+    // W/o this, Compose has no way to interact with the OS on its own
     val context = LocalContext.current
     var groceryItems = remember {
         mutableStateListOf<String>().apply {
@@ -59,6 +69,10 @@ fun GroceryListScreen(navController: NavController) {
     }
 
     Scaffold(
+        // Scaffold places the Snackbar at the bottom of the screen automatically
+        // Parameter order here doesn't affect visual positioning
+        // SnackbarHostState controls when and what to show, SnackbarHost renders it
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = { Text(text = "Grocery List") }, navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
@@ -95,8 +109,25 @@ fun GroceryListScreen(navController: NavController) {
                     )
                     OutlinedButton(
                         onClick = {
-                            if (inputText.isNotBlank()) {
-                                groceryItems.add(inputText.trim())
+                            val trimmedInputText = inputText.trim()
+                            if (trimmedInputText.isNotBlank()) {
+
+                                // any {} iterates through the list and returns true if at least one
+                                // element matches the condition
+                                if (groceryItems.any { it.equals(trimmedInputText, ignoreCase = true) }) {
+
+                                    // launch {} starts a coroutine so the suspend fn showSnackbar()
+                                    // can be called
+                                    // showSnackbar() suspends (waits) until the snackbar is
+                                    // dismissed, without blocking the UI
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("\"$trimmedInputText\" is already in the list")
+                                    }
+                                    // Labeled return: exits only the onClick lambda
+                                    // Without the label, return would try to exit GroceryListScreen
+                                    return@OutlinedButton
+                                }
+                                groceryItems.add(trimmedInputText)
                                 saveGroceryItems(context, groceryItems)
                                 inputText = ""
                             }
