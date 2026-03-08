@@ -1,10 +1,6 @@
 package com.caltlab.quickvox.screens
 
-import android.R.attr.navigationIcon
-import android.R.attr.title
-import androidx.core.content.edit
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -23,6 +18,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -33,14 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -62,11 +56,12 @@ fun GroceryListScreen(navController: NavController) {
     // Needed to access system APIs like file storage, permissions, system services, ...
     // W/o this, Compose has no way to interact with the OS on its own
     val context = LocalContext.current
-    var groceryItems = remember {
-        mutableStateListOf<String>().apply {
-            addAll(loadGroceryItems(context))
+    var groceryItems =
+        remember {
+            mutableStateListOf<String>().apply {
+                addAll(loadGroceryItems(context))
+            }
         }
-    }
 
     Scaffold(
         // Scaffold places the Snackbar at the bottom of the screen automatically
@@ -77,35 +72,40 @@ fun GroceryListScreen(navController: NavController) {
             TopAppBar(title = { Text(text = "Grocery List") }, navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back"
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
                     )
                 }
             })
-        }) { paddingValues ->
+        },
+    ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                // Vertical spacing so the list doesn't hide behind the TopAppBar
-                .padding(paddingValues)
-                // Left/right spacing so content doesn't stick to the screen edges
-                .padding(horizontal = 16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    // Vertical spacing so the list doesn't hide behind the TopAppBar
+                    .padding(paddingValues)
+                    // Left/right spacing so content doesn't stick to the screen edges
+                    .padding(horizontal = 16.dp),
         ) {
             // item {} adds a single entry to the LazyColumn's scrollable list
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
                         label = { Text("New Item") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 8.dp),
-                        singleLine = true
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(end = 8.dp),
+                        singleLine = true,
                     )
                     OutlinedButton(
                         onClick = {
@@ -116,7 +116,6 @@ fun GroceryListScreen(navController: NavController) {
                             // any {} iterates through the list and returns true if at least one
                             // element matches the condition
                             if (groceryItems.any { it.equals(trimmedInputText, ignoreCase = true) }) {
-
                                 // launch {} starts a coroutine so the suspend fn showSnackbar()
                                 // can be called
                                 // showSnackbar() suspends (waits) until the snackbar is
@@ -132,8 +131,8 @@ fun GroceryListScreen(navController: NavController) {
                             groceryItems.add(trimmedInputText)
                             saveGroceryItems(context, groceryItems)
                             inputText = ""
-
-                        }) {
+                        },
+                    ) {
                         Text("Add")
                     }
                 }
@@ -142,17 +141,19 @@ fun GroceryListScreen(navController: NavController) {
             if (groceryItems.isNotEmpty()) {
                 item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
                         // Pushes children = row items to the right (default would be left)
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         IconButton(
-                            onClick = { showDeleteDialog = true }) {
+                            onClick = { showDeleteDialog = true },
+                        ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete all items"
+                                contentDescription = "Delete all items",
                             )
                         }
                     }
@@ -161,21 +162,24 @@ fun GroceryListScreen(navController: NavController) {
 
             itemsIndexed(groceryItems) { idx, item ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // weight(1f) = take up all remaining space, pushing the X button to the right
                     Text(
-                        text = item, modifier = Modifier.weight(1f)
+                        text = item,
+                        modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = {
                         groceryItems.removeAt(idx)
                         saveGroceryItems(context, groceryItems)
                     }) {
                         Icon(
-                            Icons.Default.Close, contentDescription = "Delete"
+                            Icons.Default.Close,
+                            contentDescription = "Delete",
                         )
                     }
                 }
@@ -202,20 +206,25 @@ fun GroceryListScreen(navController: NavController) {
                     TextButton(onClick = { showDeleteDialog = false }) {
                         Text("Cancel")
                     }
-                })
+                },
+            )
         }
     }
 }
 
-private fun saveGroceryItems(context: android.content.Context, items: List<String>) {
+private fun saveGroceryItems(
+    context: android.content.Context,
+    items: List<String>,
+) {
     // SharedPreferences is a simple key-value storage, saved as an XML file on the device
     // Data is kept even after closing the app
     // Only this app can access it (MODE_PRIVATE)
     // "grocery" is the name of the SharedPreferences file
-    val sharedPreferences = context.getSharedPreferences(
-        "grocery",
-        android.content.Context.MODE_PRIVATE,
-    )
+    val sharedPreferences =
+        context.getSharedPreferences(
+            "grocery",
+            android.content.Context.MODE_PRIVATE,
+        )
 
     // Convert to JSON string
     val jsonString = Json.encodeToString(items)

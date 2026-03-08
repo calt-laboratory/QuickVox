@@ -9,16 +9,14 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -27,20 +25,21 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,19 +64,20 @@ fun VoiceGroceryListScreen(navController: NavController) {
         mutableStateOf(
             // Asks the OS: "Does this app have microphone permission?"
             context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
-                    // PackageManager = Android's system that manages all installed apps and their
-                    // permissions
-                    // PERMISSION_GRANTED is just a constant (value 0) meaning "yes, allowed"
-                    PackageManager.PERMISSION_GRANTED
+                // PackageManager = Android's system that manages all installed apps and their
+                // permissions
+                // PERMISSION_GRANTED is just a constant (value 0) meaning "yes, allowed"
+                PackageManager.PERMISSION_GRANTED,
         )
     }
 
     // Opens the system permission dialog when the user presses Record, then saves the user's choice
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-    }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            hasPermission = granted
+        }
 
     val speechRecognizer = remember { SpeechRecognizer.createSpeechRecognizer(context) }
     // DisposableEffect = Compose lifecycle block that runs cleanup code
@@ -91,11 +91,12 @@ fun VoiceGroceryListScreen(navController: NavController) {
         }
     }
 
-    val groceryItems = remember {
-        mutableStateListOf<String>().apply {
-            addAll(loadVoiceGroceryItems(context))
+    val groceryItems =
+        remember {
+            mutableStateListOf<String>().apply {
+                addAll(loadVoiceGroceryItems(context))
+            }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -105,25 +106,27 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back",
                         )
                     }
-                }
+                },
             )
-        }
+        },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
         ) {
             item {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Button(
                         onClick = {
@@ -135,53 +138,69 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                 // (results, errors, etc.)
                                 // object : RecognitionListener creates an anonymous object that
                                 // implements the interface
-                                speechRecognizer.setRecognitionListener(object : RecognitionListener {
+                                speechRecognizer.setRecognitionListener(
+                                    object : RecognitionListener {
+                                        // Called when speech recognition is finished and text is ready
+                                        override fun onResults(results: Bundle?) {
+                                            // Get the list of recognized texts from the Bundle
+                                            val matches =
+                                                results?.getStringArrayList(
+                                                    SpeechRecognizer.RESULTS_RECOGNITION,
+                                                )
 
-                                    // Called when speech recognition is finished and text is ready
-                                    override fun onResults(results: Bundle?) {
-                                        // Get the list of recognized texts from the Bundle
-                                        val matches = results?.getStringArrayList(
-                                            SpeechRecognizer.RESULTS_RECOGNITION
-                                        )
+                                            // Take the best match, or exit if nothing was recognized
+                                            val spokenText = matches?.firstOrNull() ?: return
 
-                                        // Take the best match, or exit if nothing was recognized
-                                        val spokenText = matches?.firstOrNull() ?: return
+                                            // Split by commas, "and", "und" to add multiple items
+                                            // e.g. "milk, bread and eggs" → ["milk", "bread", "eggs"]
+                                            val items =
+                                                spokenText
+                                                    .split(",", " and ", " und ")
+                                                    .map { it.trim() }
+                                                    .filter { it.isNotBlank() } // remove empty entries
 
-                                        // Split by commas, "and", "und" to add multiple items
-                                        // e.g. "milk, bread and eggs" → ["milk", "bread", "eggs"]
-                                        val items = spokenText
-                                            .split(",", " and ", " und ")
-                                            .map { it.trim() }
-                                            .filter { it.isNotBlank() }  // remove empty entries
+                                            groceryItems.addAll(items)
+                                            saveVoiceGroceryItems(context, groceryItems)
+                                            isRecording = false
+                                        }
 
-                                        groceryItems.addAll(items)
-                                        saveVoiceGroceryItems(context, groceryItems)
-                                        isRecording = false
-                                    }
-                                    // Called when an error occurs, reset button back to "Record"
-                                    override fun onError(error: Int) { isRecording = false}
+                                        // Called when an error occurs, reset button back to "Record"
+                                        override fun onError(error: Int) {
+                                            isRecording = false
+                                        }
 
-                                    // Required by the interface but not needed for our use case
-                                    override fun onReadyForSpeech(p0: Bundle?) {}
-                                    override fun onBeginningOfSpeech() {}
-                                    override fun onEndOfSpeech() {}
-                                    override fun onRmsChanged(rmsdB: Float) {}
-                                    override fun onBufferReceived(buffer: ByteArray?) {}
-                                    override fun onPartialResults(partialResults: Bundle?) {}
-                                    override fun onEvent(eventType: Int, params: Bundle?) {}
-                                })
+                                        // Required by the interface but not needed for our use case
+                                        override fun onReadyForSpeech(p0: Bundle?) {}
+
+                                        override fun onBeginningOfSpeech() {}
+
+                                        override fun onEndOfSpeech() {}
+
+                                        override fun onRmsChanged(rmsdB: Float) {}
+
+                                        override fun onBufferReceived(buffer: ByteArray?) {}
+
+                                        override fun onPartialResults(partialResults: Bundle?) {}
+
+                                        override fun onEvent(
+                                            eventType: Int,
+                                            params: Bundle?,
+                                        ) {}
+                                    },
+                                )
 
                                 // Intent = message to Android: "I want to recognize speech"
                                 // .apply {} configures it right after creation
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    // Use free-form speech model (normal talking, not web search)
-                                    putExtra(
-                                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                    )
-                                    // Only return the 1 best result
-                                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                                }
+                                val intent =
+                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        // Use free-form speech model (normal talking, not web search)
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                                        )
+                                        // Only return the 1 best result
+                                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                    }
 
                                 // Start listening with the configured intent
                                 speechRecognizer.startListening(intent)
@@ -189,20 +208,21 @@ fun VoiceGroceryListScreen(navController: NavController) {
                             }
                         },
                         // Red button when recording, default color when idle
-                        colors = if (isRecording) {
-                            ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
-                        } else {
-                            ButtonDefaults.buttonColors()
-                        }
+                        colors =
+                            if (isRecording) {
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                )
+                            } else {
+                                ButtonDefaults.buttonColors()
+                            },
                     ) {
                         Icon(
                             if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
                             contentDescription = if (isRecording) "Stop" else "Record",
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
-                        
+
                         Spacer(modifier = Modifier.size(8.dp))
 
                         Text(if (isRecording) "Stop" else "Record")
@@ -212,15 +232,16 @@ fun VoiceGroceryListScreen(navController: NavController) {
             if (groceryItems.isNotEmpty()) {
                 item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 16.dp),
-                        horizontalArrangement = Arrangement.End
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        IconButton(onClick = { showDeleteDialog = true } ) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Delete all items"
+                                contentDescription = "Delete all items",
                             )
                         }
                     }
@@ -229,14 +250,15 @@ fun VoiceGroceryListScreen(navController: NavController) {
 
             itemsIndexed(groceryItems) { idx, item ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp ),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = item,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = {
                         groceryItems.removeAt(idx)
@@ -244,7 +266,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     }) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Delete"
+                            contentDescription = "Delete",
                         )
                     }
                 }
@@ -266,21 +288,26 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showDeleteDialog = false
+                    TextButton(onClick = {
+                        showDeleteDialog = false
                     }) {
                         Text("Cancel")
                     }
-                }
+                },
             )
         }
     }
 }
 
-private fun saveVoiceGroceryItems(context: android.content.Context, items: List<String>) {
-    val sharedPreferences = context.getSharedPreferences(
-        "voice_grocery",
-        android.content.Context.MODE_PRIVATE
-    )
+private fun saveVoiceGroceryItems(
+    context: android.content.Context,
+    items: List<String>,
+) {
+    val sharedPreferences =
+        context.getSharedPreferences(
+            "voice_grocery",
+            android.content.Context.MODE_PRIVATE,
+        )
     val jsonString = Json.encodeToString(items)
     sharedPreferences.edit {
         putString("items", jsonString)
@@ -288,9 +315,10 @@ private fun saveVoiceGroceryItems(context: android.content.Context, items: List<
 }
 
 private fun loadVoiceGroceryItems(context: android.content.Context): List<String> {
-    val sharedPreferences = context.getSharedPreferences(
-        "voice_grocery",
-        android.content.Context.MODE_PRIVATE
+    val sharedPreferences =
+        context.getSharedPreferences(
+            "voice_grocery",
+            android.content.Context.MODE_PRIVATE,
         )
     val jsonString = sharedPreferences.getString("items", null) ?: return emptyList()
     return Json.decodeFromString<List<String>>(jsonString)

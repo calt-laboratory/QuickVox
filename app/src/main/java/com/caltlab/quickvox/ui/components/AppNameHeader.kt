@@ -15,16 +15,17 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun AppNameHeader() {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(top = 70.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(top = 70.dp),
     ) {
         Text(
             text = "QuickVox",
             color = Color.DarkGray,
             fontSize = 30.sp,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center),
         )
     }
 }

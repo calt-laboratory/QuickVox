@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,11 +29,12 @@ import com.caltlab.quickvox.ui.components.AppNameHeader
 @Composable
 fun MainScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+        verticalArrangement = Arrangement.Top,
     ) {
         AppNameHeader()
 
@@ -42,30 +42,31 @@ fun MainScreen(navController: NavController) {
 
         ElevatedCard(
             onClick = { navController.navigate(Screen.VoiceGroceryListScreen.route) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     Icons.Default.Mic,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
-                    )
+                    modifier = Modifier.size(32.dp),
+                )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column {
                     Text(
                         text = "Grocery List (Voice)",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Add items by voice",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -75,16 +76,17 @@ fun MainScreen(navController: NavController) {
 
         ElevatedCard(
             onClick = { navController.navigate(Screen.TextGroceryListScreen.route) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // Inner spacing within the card
-                    // dp = density-independent pixels, a unit that scales with screen density so it
-                    // looks the same on all devices
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        // Inner spacing within the card
+                        // dp = density-independent pixels, a unit that scales with screen density so it
+                        // looks the same on all devices
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     // Pre-built Material icon: Edit = pencil
@@ -93,7 +95,7 @@ fun MainScreen(navController: NavController) {
                     // null because the icon is decorative; the card text already describes the
                     // action for the user
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -101,11 +103,11 @@ fun MainScreen(navController: NavController) {
                 Column {
                     Text(
                         text = "Grocery List (Text)",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Add items by typing",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -115,30 +117,31 @@ fun MainScreen(navController: NavController) {
 
         ElevatedCard(
             onClick = { navController.navigate(Screen.NotesScreen.route) },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     Icons.Default.Notifications,
                     contentDescription = null,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                Column{
+                Column {
                     Text(
                         text = "Notes",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "Quick voice notes",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
