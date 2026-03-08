@@ -8,6 +8,10 @@ Items are persisted locally.
 
 **Status:** Complete
 
+**Planned improvements:**
+- Duplicate detection — prevent adding items that are already on the list
+- Highlight animation for newly added items
+
 ---
 
 ### 2. Grocery List (Voice-Based)
@@ -21,6 +25,8 @@ Includes runtime permission handling for microphone access.
 **Planned improvements:**
 - Wave/pulse animation on the record button to give visual feedback that recording is active
 - Improved error handling and user feedback when speech recognition fails
+- Duplicate detection — prevent adding items that are already on the list
+- Highlight animation for newly added items
 
 ---
 
@@ -38,3 +44,12 @@ Record voice memos, have them transcribed, edit them, and export as PDF.
 - PDF export of individual notes
 - Edit transcribed text before saving
 - List view of all saved notes with search
+
+---
+
+### Vocabs
+
+- **Suspend function** — a function marked with `suspend`. It can pause and resume without blocking the thread. 
+  It just declares "I might wait for something."
+  It can only be called from a coroutine (or another suspend function).
+- **Coroutine** — the actual running environment that executes suspend functions. You create one with `launch {}`, `async {}`, etc.
