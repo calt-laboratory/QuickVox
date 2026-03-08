@@ -140,96 +140,97 @@ fun VoiceGroceryListScreen(navController: NavController) {
                             // Request permission first
                             if (!hasPermission) {
                                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            } else {
-                                // Tell the recognizer what to do when something happens
-                                // (results, errors, etc.)
-                                // object : RecognitionListener creates an anonymous object that
-                                // implements the interface
-                                speechRecognizer.setRecognitionListener(
-                                    object : RecognitionListener {
-                                        // Called when speech recognition is finished and text is ready
-                                        override fun onResults(results: Bundle?) {
-                                            // Get the list of recognized texts from the Bundle
-                                            val matches =
-                                                results?.getStringArrayList(
-                                                    SpeechRecognizer.RESULTS_RECOGNITION,
-                                                )
+                                return@Button
+                            }
 
-                                            // Take the best match, or exit if nothing was recognized
-                                            val spokenText = matches?.firstOrNull() ?: return
+                            // Tell the recognizer what to do when something happens
+                            // (results, errors, etc.)
+                            // object : RecognitionListener creates an anonymous object that
+                            // implements the interface
+                            speechRecognizer.setRecognitionListener(
+                                object : RecognitionListener {
+                                    // Called when speech recognition is finished and text is ready
+                                    override fun onResults(results: Bundle?) {
+                                        // Get the list of recognized texts from the Bundle
+                                        val matches =
+                                            results?.getStringArrayList(
+                                                SpeechRecognizer.RESULTS_RECOGNITION,
+                                            )
 
-                                            // Split by commas, "and", "und" to add multiple items
-                                            // e.g. "milk, bread and eggs" → ["milk", "bread", "eggs"]
-                                            val items =
-                                                spokenText
-                                                    .split(",", " and ", " und ")
-                                                    .map { it.trim() }
-                                                    .filter { it.isNotBlank() } // remove empty entries
+                                        // Take the best match, or exit if nothing was recognized
+                                        val spokenText = matches?.firstOrNull() ?: return
 
-                                            // Filter out duplicates (case-intensitive)
-                                            val duplicates =
-                                                items.filter { newItems ->
-                                                    groceryItems.any {
-                                                        it.equals(newItems, ignoreCase = true)
-                                                    }
-                                                }
-                                            val newItems = items - duplicates.toSet()
+                                        // Split by commas, "and", "und" to add multiple items
+                                        // e.g. "milk, bread and eggs" → ["milk", "bread", "eggs"]
+                                        val items =
+                                            spokenText
+                                                .split(",", " and ", " und ")
+                                                .map { it.trim() }
+                                                .filter { it.isNotBlank() } // remove empty entries
 
-                                            groceryItems.addAll(newItems)
-                                            saveVoiceGroceryItems(context, groceryItems)
-                                            isRecording = false
-
-                                            if (duplicates.isNotEmpty()) {
-                                                coroutineScope.launch {
-                                                    snackbarHostState.showSnackbar(
-                                                        "Already in list: ${duplicates.joinToString(", ")}",
-                                                    )
+                                        // Filter out duplicates (case-insensitive)
+                                        val duplicates =
+                                            items.filter { newItems ->
+                                                groceryItems.any {
+                                                    it.equals(newItems, ignoreCase = true)
                                                 }
                                             }
+                                        val newItems = items - duplicates.toSet()
+
+                                        groceryItems.addAll(newItems)
+                                        saveVoiceGroceryItems(context, groceryItems)
+                                        isRecording = false
+
+                                        if (duplicates.isNotEmpty()) {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                    "Already in list: ${duplicates.joinToString(", ")}",
+                                                )
+                                            }
                                         }
-
-                                        // Called when an error occurs, reset button back to "Record"
-                                        override fun onError(error: Int) {
-                                            isRecording = false
-                                        }
-
-                                        // Required by the interface but not needed for our use case
-                                        override fun onReadyForSpeech(p0: Bundle?) {}
-
-                                        override fun onBeginningOfSpeech() {}
-
-                                        override fun onEndOfSpeech() {}
-
-                                        override fun onRmsChanged(rmsdB: Float) {}
-
-                                        override fun onBufferReceived(buffer: ByteArray?) {}
-
-                                        override fun onPartialResults(partialResults: Bundle?) {}
-
-                                        override fun onEvent(
-                                            eventType: Int,
-                                            params: Bundle?,
-                                        ) {}
-                                    },
-                                )
-
-                                // Intent = message to Android: "I want to recognize speech"
-                                // .apply {} configures it right after creation
-                                val intent =
-                                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        // Use free-form speech model (normal talking, not web search)
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-                                        )
-                                        // Only return the 1 best result
-                                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                                     }
 
-                                // Start listening with the configured intent
-                                speechRecognizer.startListening(intent)
-                                isRecording = true
-                            }
+                                    // Called when an error occurs, reset button back to "Record"
+                                    override fun onError(error: Int) {
+                                        isRecording = false
+                                    }
+
+                                    // Required by the interface but not needed for our use case
+                                    override fun onReadyForSpeech(p0: Bundle?) {}
+
+                                    override fun onBeginningOfSpeech() {}
+
+                                    override fun onEndOfSpeech() {}
+
+                                    override fun onRmsChanged(rmsdB: Float) {}
+
+                                    override fun onBufferReceived(buffer: ByteArray?) {}
+
+                                    override fun onPartialResults(partialResults: Bundle?) {}
+
+                                    override fun onEvent(
+                                        eventType: Int,
+                                        params: Bundle?,
+                                    ) {}
+                                },
+                            )
+
+                            // Intent = message to Android: "I want to recognize speech"
+                            // .apply {} configures it right after creation
+                            val intent =
+                                Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    // Use free-form speech model (normal talking, not web search)
+                                    putExtra(
+                                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                                    )
+                                    // Only return the 1 best result
+                                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                }
+
+                            // Start listening with the configured intent
+                            speechRecognizer.startListening(intent)
+                            isRecording = true
                         },
                         // Red button when recording, default color when idle
                         colors =
