@@ -33,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +52,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +60,8 @@ import kotlinx.serialization.json.Json
 fun VoiceGroceryListScreen(navController: NavController) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var isRecording by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val context = LocalContext.current
 
@@ -99,6 +105,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
         }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(text = "Grocery List (Voice)") },
@@ -159,9 +166,26 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                                     .map { it.trim() }
                                                     .filter { it.isNotBlank() } // remove empty entries
 
-                                            groceryItems.addAll(items)
+                                            // Filter out duplicates (case-intensitive)
+                                            val duplicates =
+                                                items.filter { newItems ->
+                                                    groceryItems.any {
+                                                        it.equals(newItems, ignoreCase = true)
+                                                    }
+                                                }
+                                            val newItems = items - duplicates.toSet()
+
+                                            groceryItems.addAll(newItems)
                                             saveVoiceGroceryItems(context, groceryItems)
                                             isRecording = false
+
+                                            if (duplicates.isNotEmpty()) {
+                                                coroutineScope.launch {
+                                                    snackbarHostState.showSnackbar(
+                                                        "Already in list: ${duplicates.joinToString(", ")}",
+                                                    )
+                                                }
+                                            }
                                         }
 
                                         // Called when an error occurs, reset button back to "Record"
