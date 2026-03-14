@@ -9,7 +9,7 @@ Items are persisted locally.
 **Status:** Complete
 
 **Planned improvements:**
-- Highlight animation for newly added items
+- ... 
 
 ---
 

@@ -211,8 +211,8 @@ fun GroceryListScreen(navController: NavController) {
                         Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(backgroundColor)
-                            .padding(vertical = 4.dp),
+                            .background(backgroundColor) // Highlight background
+                            .padding(vertical = 4.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // weight(1f) = take up all remaining space, pushing the X button to the right
