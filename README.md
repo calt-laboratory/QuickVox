@@ -24,7 +24,6 @@ Includes runtime permission handling for microphone access.
 **Planned improvements:**
 - Wave/pulse animation on the record button to give visual feedback that recording is active
 - Improved error handling and user feedback when speech recognition fails
-- Highlight animation for newly added items
 
 ---
 

@@ -9,16 +9,22 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -40,6 +46,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +55,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -62,6 +71,8 @@ fun VoiceGroceryListScreen(navController: NavController) {
     var isRecording by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var highlightedRecentlyAddedItems by remember { mutableStateOf<List<String>>(emptyList()) }
+    val groceryListState = rememberLazyListState()
 
     val context = LocalContext.current
 
@@ -105,7 +116,12 @@ fun VoiceGroceryListScreen(navController: NavController) {
         }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.imePadding(),
+            )
+        },
         topBar = {
             TopAppBar(
                 title = { Text(text = "Grocery List (Voice)") },
@@ -120,7 +136,13 @@ fun VoiceGroceryListScreen(navController: NavController) {
             )
         },
     ) { paddingValues ->
+        LaunchedEffect(highlightedRecentlyAddedItems) {
+            if (highlightedRecentlyAddedItems.isNotEmpty()) {
+                groceryListState.animateScrollToItem(1 + groceryItems.size)
+            }
+        }
         LazyColumn(
+            state = groceryListState,
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -148,7 +170,10 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                 speechRecognizer = speechRecognizer,
                                 groceryItems = groceryItems,
                                 context = context,
-                                onRecognitionDone = { isRecording = false },
+                                onRecognitionDone = { newItems ->
+                                    isRecording = false
+                                    highlightedRecentlyAddedItems = newItems
+                                },
                                 onDuplicatesFound = { duplicates ->
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar(
@@ -202,11 +227,27 @@ fun VoiceGroceryListScreen(navController: NavController) {
             }
 
             itemsIndexed(groceryItems) { idx, item ->
+                val isHighlighted = highlightedRecentlyAddedItems.contains(item)
+
+                val backgroundColor by animateColorAsState(
+                    targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.3F) else Color.Transparent,
+                    animationSpec = tween(durationMillis = 500),
+                    label = "highlightedAnimation"
+                )
+
+                if (isHighlighted) {
+                    LaunchedEffect(item) {
+                        kotlinx.coroutines.delay(1000L)
+                        highlightedRecentlyAddedItems = highlightedRecentlyAddedItems - item
+                    }
+                }
                 Row(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(backgroundColor)
+                            .padding(vertical = 4.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
@@ -266,7 +307,7 @@ private fun startSpeechRecognition(
     speechRecognizer: SpeechRecognizer,
     groceryItems: MutableList<String>,
     context: android.content.Context,
-    onRecognitionDone: () -> Unit,
+    onRecognitionDone: (List<String>) -> Unit,
     onDuplicatesFound: (List<String>) -> Unit,
 ) {
     // Tell the recognizer what to do when something happens
@@ -305,7 +346,7 @@ private fun startSpeechRecognition(
 
                 groceryItems.addAll(uniqueItems)
                 saveVoiceGroceryItems(context, groceryItems)
-                onRecognitionDone()
+                onRecognitionDone(uniqueItems)
 
                 if (duplicates.isNotEmpty()) {
                     onDuplicatesFound(duplicates)
@@ -314,7 +355,7 @@ private fun startSpeechRecognition(
 
             // Called when an error occurs, reset button back to "Record"
             override fun onError(error: Int) {
-                onRecognitionDone()
+                onRecognitionDone(emptyList())
             }
 
             // Required by the interface but not needed for our use case
