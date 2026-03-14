@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,6 +59,11 @@ fun GroceryListScreen(navController: NavController) {
     val snackbarHostState = remember { SnackbarHostState() }
     var highlightedRecentlyAddedItem by remember { mutableStateOf<String?>(null) }
 
+    // LazyListState acts as a remote control for the LazyColumn
+    // Without it, the LazyColumn just renders, but we can't programmatically control
+    // where it scrolls to (e.g. to a newly added item via animateScrollToItem())
+    val groceryListState = rememberLazyListState()
+
     // rememberCoroutineScope() is needed to call suspend functions (like showSnackbar) from regular
     // code (like onClick)
     val coroutineScope = rememberCoroutineScope()
@@ -97,12 +103,42 @@ fun GroceryListScreen(navController: NavController) {
             })
         },
     ) { paddingValues ->
+        // LaunchedEffect runs a coroutine AFTER recomposition (= after the screen is redrawn)
+        // The key (highlightedRecentlyAddedItem) controls when the effect re-runs:
+        //   - Runs once on first composition
+        //   - Re-triggers every time the key value changes
+        //   - Automatically cancels the previous coroutine when re-triggered
+        // Why LaunchedEffect and not coroutineScope.launch in onClick?
+        //   onClick: add item → scroll → THEN recomposition (LazyColumn redraws)
+        //   → scrolling fails because the new item isn't rendered yet
+        //   LaunchedEffect: add item → recomposition (LazyColumn redraws) → THEN scroll
+        //   → scrolling works because the new item already exists in the list
+        LaunchedEffect(highlightedRecentlyAddedItem) {
+            // null check: the key also changes when reset to null (after highlight fades out),
+            // which would cause an unnecessary scroll without this guard
+            if (highlightedRecentlyAddedItem != null) {
+                // Smoothly scroll to the last grocery item in the LazyColumn
+                // Index = 1 + size because the LazyColumn has fixed items before the grocery items:
+                //   Index 0: Input field row
+                //   Index 1: Delete all button
+                //   Index 2+: Grocery items
+                // So the last grocery item is at index 1 + groceryItems.size
+                groceryListState.animateScrollToItem(1 + groceryItems.size)
+            }
+        }
+
         LazyColumn(
+            // Connect the LazyListState to this LazyColumn so we can control its scroll position
+            state = groceryListState,
             modifier =
                 Modifier
                     .fillMaxSize()
                     // Vertical spacing so the list doesn't hide behind the TopAppBar
                     .padding(paddingValues)
+                    // Shrinks the LazyColumn's visible area to end above the keyboard
+                    // Without it, the last items would be hidden behind the keyboard
+                    // and animateScrollToItem() would scroll to an invisible position
+                    .imePadding()
                     // Left/right spacing so content doesn't stick to the screen edges
                     .padding(horizontal = 16.dp),
         ) {
