@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -76,7 +77,15 @@ fun GroceryListScreen(navController: NavController) {
         // Scaffold places the Snackbar at the bottom of the screen automatically
         // Parameter order here doesn't affect visual positioning
         // SnackbarHostState controls when and what to show, SnackbarHost renders it
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                // IME = Input Method Editor (the soft keyboard)
+                // imePadding() adds dynamic bottom padding equal to the keyboard height
+                // Without it, the Snackbar would be hidden behind the soft keyboard
+                modifier = Modifier.imePadding(),
+            )
+        },
         topBar = {
             TopAppBar(title = { Text(text = "Grocery List") }, navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
