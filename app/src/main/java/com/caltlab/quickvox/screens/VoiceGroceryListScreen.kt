@@ -10,17 +10,21 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -48,6 +52,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +79,8 @@ fun VoiceGroceryListScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     var highlightedRecentlyAddedItems by remember { mutableStateOf<List<String>>(emptyList()) }
     val groceryListState = rememberLazyListState()
-    var remainingRecordingSeconds by remember { mutableStateOf(0) }
+    var remainingRecordingSeconds by remember { mutableIntStateOf(0) }
+    var currRootMeanSquareDecibel by remember { mutableFloatStateOf(0f) }
 
     val context = LocalContext.current
 
@@ -195,6 +202,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                 context = context,
                                 onRecognitionDone = { newItems ->
                                     isRecording = false
+                                    currRootMeanSquareDecibel = 0f
                                     highlightedRecentlyAddedItems = newItems
                                 },
                                 onDuplicatesFound = { duplicates ->
@@ -203,6 +211,10 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                             "Already in list: ${duplicates.joinToString(", ")}",
                                         )
                                     }
+                                },
+                                onRootMeansSquareDecibelChanged = {
+                                        rootMeanSquareDecibel ->
+                                    currRootMeanSquareDecibel = rootMeanSquareDecibel
                                 },
                             )
                             isRecording = true
@@ -234,6 +246,10 @@ fun VoiceGroceryListScreen(navController: NavController) {
                                 "Record"
                             },
                         )
+                    }
+                    if (isRecording) {
+                        Spacer(modifier = Modifier.size(12.dp))
+                        WaveVisualizer(rootMeanSquareDecibel = currRootMeanSquareDecibel)
                     }
                 }
             }
@@ -333,6 +349,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
  * @param context Android context needed for saving to SharedPreferences
  * @param onRecognitionDone called when recognition finishes (success or error)
  * @param onDuplicatesFound called with a list of items that were already in the list
+ * @param onRootMeansSquareDecibelChanged called repeatedly w/ the curr microphone loudness (for the visualizer)
  */
 private fun startSpeechRecognition(
     speechRecognizer: SpeechRecognizer,
@@ -340,6 +357,7 @@ private fun startSpeechRecognition(
     context: android.content.Context,
     onRecognitionDone: (List<String>) -> Unit,
     onDuplicatesFound: (List<String>) -> Unit,
+    onRootMeansSquareDecibelChanged: (Float) -> Unit,
 ) {
     // Tell the recognizer what to do when something happens
     // (results, errors, etc.)
@@ -396,7 +414,9 @@ private fun startSpeechRecognition(
 
             override fun onEndOfSpeech() {}
 
-            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onRmsChanged(rmsdB: Float) {
+                onRootMeansSquareDecibelChanged(rmsdB)
+            }
 
             override fun onBufferReceived(buffer: ByteArray?) {}
 
@@ -424,6 +444,67 @@ private fun startSpeechRecognition(
 
     // Start listening with the configured intent
     speechRecognizer.startListening(intent)
+}
+
+@Composable
+private fun WaveVisualizer(rootMeanSquareDecibel: Float) {
+    var minRootMeanSquareDecibel by remember { mutableFloatStateOf(rootMeanSquareDecibel) }
+    var maxRootMeanSquareDecibel by remember { mutableFloatStateOf(rootMeanSquareDecibel) }
+
+    // Track the lowest and highest loudness values seen so far during this recording session
+    // The values come from Android's onRmsChanged: raw audio samples → RMS calculation → converted
+    // to decibels. We only receive the final dB value. Since different devices report different
+    // ranges, we learn the actual range dynamically and normalize relative to it (see below).
+    if (rootMeanSquareDecibel < minRootMeanSquareDecibel) {
+        minRootMeanSquareDecibel = rootMeanSquareDecibel
+    }
+    if (rootMeanSquareDecibel > maxRootMeanSquareDecibel) {
+        maxRootMeanSquareDecibel = rootMeanSquareDecibel
+    }
+
+    // Min-Max Scaling: normalizes the current dB value to a 0..1 range
+    // based on the lowest and highest values observed so far.
+    // Formula: normalized = (value - min) / (max - min)
+    // If the range is too small (<0.5), we default to 0.5 to avoid division issues
+    // and keep the bars at a neutral height until enough data has been collected.
+    val range = maxRootMeanSquareDecibel - minRootMeanSquareDecibel
+    val normalizedLevel =
+        if (range > 0.5f) {
+            ((rootMeanSquareDecibel - minRootMeanSquareDecibel) / range).coerceIn(0f, 1f)
+        } else {
+            0.5f
+        }
+
+    val barMultipliers = listOf(0.3f, 0.5f, 0.6f, 0.8f, 0.9f, 1.0f, 0.9f, 0.8f, 0.6f, 0.5f, 0.3f)
+    val maxBarHeight = 40f // Maximum height in dp
+
+    Row(
+        modifier = Modifier.height(maxBarHeight.dp),
+        // Adds 4dp gap between each bar instead of placing them edge-to-edge
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        // Aligns all bars to the bottom so they grow upward (default would be center)
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        barMultipliers.forEach { multiplier ->
+            // Each bar has min height of 4dp so it's always visible
+            val targetHeight = (4f + normalizedLevel * multiplier * maxBarHeight)
+
+            val animatedHeight by animateFloatAsState(
+                targetValue = targetHeight,
+                animationSpec = tween(durationMillis = 100),
+                label = "barHeight",
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .width(6.dp)
+                        .height(animatedHeight.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+            )
+        }
+    }
 }
 
 private fun saveVoiceGroceryItems(
