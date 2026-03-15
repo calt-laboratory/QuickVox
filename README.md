@@ -46,7 +46,12 @@ Record voice memos, have them transcribed, edit them, and export as PDF.
 
 ### Vocabs
 
-- **Suspend function** — a function marked with `suspend`. It can pause and resume without blocking the thread. 
+- **Coroutine** — the actual running environment that executes suspend functions. You create one with `launch {}`, `async {}`, etc.
+- **`return@Label`** — a labeled return that exits only the surrounding lambda, not the whole function.
+  In Kotlin, `return` inside a lambda would exit the **entire enclosing function** by default.
+  `return@Button` means "exit only the `onClick` lambda of this `Button`."
+  The label name matches the function the lambda is passed to (e.g. `Button`, `forEach`, `launch`).
+  Use it whenever you want to do an early exit from a lambda (like `return` in a regular function) without accidentally returning from the outer function.
+- **Suspend function** — a function marked with `suspend`. It can pause and resume without blocking the thread.
   It just declares "I might wait for something."
   It can only be called from a coroutine (or another suspend function).
-- **Coroutine** — the actual running environment that executes suspend functions. You create one with `launch {}`, `async {}`, etc.
