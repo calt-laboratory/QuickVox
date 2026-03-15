@@ -65,7 +65,13 @@ the value is the current microphone loudness already expressed in decibels.
 A technique to rescale a value into a fixed range of 0 to 1, based on the observed minimum
 and maximum values.
 
-Formula: `normalized = (value - min) / (max - min)`
+```
+        x - x_min
+x' = ─────────────────
+      x_max - x_min
+```
+
+Where `x` = current value, `x'` = normalized result (0 to 1).
 
 Example with loudness values where min=2 and max=8:
 
@@ -99,7 +105,7 @@ so a simple average would be ~0. RMS fixes this by:
 2. Taking the mean of all squared values
 3. Taking the square root to get back to the original scale
 
-Formula: `RMS = √(1/n × (x₁² + x₂² + ... + xₙ²))`
+Formula: `RMS = √(1/n × Σxᵢ²)`
 
 **The full pipeline in Android:**
 ```
