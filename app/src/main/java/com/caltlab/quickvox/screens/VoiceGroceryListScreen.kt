@@ -455,25 +455,15 @@ private fun WaveVisualizer(rootMeanSquareDecibel: Float) {
     // The values come from Android's onRmsChanged: raw audio samples → RMS calculation → converted
     // to decibels. We only receive the final dB value. Since different devices report different
     // ranges, we learn the actual range dynamically and normalize relative to it (see below).
-    if (rootMeanSquareDecibel < minRootMeanSquareDecibel) {
-        minRootMeanSquareDecibel = rootMeanSquareDecibel
-    }
-    if (rootMeanSquareDecibel > maxRootMeanSquareDecibel) {
-        maxRootMeanSquareDecibel = rootMeanSquareDecibel
-    }
+    minRootMeanSquareDecibel = minOf(minRootMeanSquareDecibel, rootMeanSquareDecibel)
+    maxRootMeanSquareDecibel = maxOf(maxRootMeanSquareDecibel, rootMeanSquareDecibel)
 
-    // Min-Max Scaling: normalizes the current dB value to a 0..1 range
-    // based on the lowest and highest values observed so far.
-    // Formula: normalized = (value - min) / (max - min)
-    // If the range is too small (<0.5), we default to 0.5 to avoid division issues
-    // and keep the bars at a neutral height until enough data has been collected.
-    val range = maxRootMeanSquareDecibel - minRootMeanSquareDecibel
     val normalizedLevel =
-        if (range > 0.5f) {
-            ((rootMeanSquareDecibel - minRootMeanSquareDecibel) / range).coerceIn(0f, 1f)
-        } else {
-            0.5f
-        }
+        applyMinMaxScaling(
+            minRootMeanSquareDecibel,
+            maxRootMeanSquareDecibel,
+            rootMeanSquareDecibel,
+        )
 
     val barMultipliers = listOf(0.3f, 0.5f, 0.6f, 0.8f, 0.9f, 1.0f, 0.9f, 0.8f, 0.6f, 0.5f, 0.3f)
     val maxBarHeight = 40f // Maximum height in dp
@@ -505,6 +495,21 @@ private fun WaveVisualizer(rootMeanSquareDecibel: Float) {
             )
         }
     }
+}
+
+private fun applyMinMaxScaling(
+    minRootMeanSquareDecibel: Float,
+    maxRootMeanSquareDecibel: Float,
+    rootMeanSquareDecibel: Float,
+): Float {
+    val range = maxRootMeanSquareDecibel - minRootMeanSquareDecibel
+    val normalizedLevel =
+        if (range > 0.5f) {
+            ((rootMeanSquareDecibel - minRootMeanSquareDecibel) / range).coerceIn(0f, 1f)
+        } else {
+            0.5f
+        }
+    return normalizedLevel
 }
 
 private fun saveVoiceGroceryItems(

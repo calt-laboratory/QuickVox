@@ -72,7 +72,7 @@ fun GroceryListScreen(navController: NavController) {
     // Needed to access system APIs like file storage, permissions, system services, ...
     // W/o this, Compose has no way to interact with the OS on its own
     val context = LocalContext.current
-    var groceryItems =
+    val groceryItems =
         remember {
             mutableStateListOf<String>().apply {
                 addAll(loadGroceryItems(context))
