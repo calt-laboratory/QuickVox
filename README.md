@@ -23,7 +23,8 @@ Includes runtime permission handling for microphone access.
 
 **Planned improvements:**
 - Improved error handling and user feedback when speech recognition fails
-
+- Cancel button
+- Quantity recognition
 ---
 
 ### 3. Voice Notes
@@ -33,11 +34,13 @@ Record voice memos, have them transcribed, edit them, and export as PDF.
 
 **Status:** Not yet implemented
 
+**Tech stack:** Ktor (Kotlin) backend, Whisper via [whisper-jni](https://github.com/GiviMAD/whisper-jni), PostgreSQL, self-hosted on Hetzner
+
 **Planned features:**
-- Privacy-focused speech-to-text using [Vosk](https://alphacephei.com/vosk/) on a self-hosted server — no third-party cloud services
-- Server-side database for storing notes (title, transcription, timestamps)
-- REST API for communication between app and server
-- PDF export of individual notes
+- Speech-to-text using Whisper on a self-hosted server — no third-party cloud services
+- REST API (Ktor) for communication between app and server
+- PostgreSQL database for storing notes (title, transcription, timestamps, audio path)
+- PDF export of individual notes (on-demand via PDFBox/iText)
 - Edit transcribed text before saving
 - List view of all saved notes with search
 
