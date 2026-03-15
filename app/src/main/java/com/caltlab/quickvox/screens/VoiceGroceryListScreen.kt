@@ -73,6 +73,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
     val coroutineScope = rememberCoroutineScope()
     var highlightedRecentlyAddedItems by remember { mutableStateOf<List<String>>(emptyList()) }
     val groceryListState = rememberLazyListState()
+    var remainingRecordingSeconds by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
 
@@ -114,6 +115,21 @@ fun VoiceGroceryListScreen(navController: NavController) {
                 addAll(loadVoiceGroceryItems(context))
             }
         }
+
+    // LaunchedEffect starts a coroutine that runs as long as the key (isRecording) stays the same
+    // When isRecording changes, the running coroutine is canceled and restarted w/ the new val
+    // This means: if the recognizer stops early (silence detection), isRecording becomes false,
+    // and the countdown coroutine gets canceled automatically — no manual cleanup needed
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            remainingRecordingSeconds = 10
+            while (remainingRecordingSeconds > 0) {
+                kotlinx.coroutines.delay(1000L)
+                remainingRecordingSeconds--
+            }
+            speechRecognizer.stopListening()
+        }
+    }
 
     Scaffold(
         snackbarHost = {
@@ -159,10 +175,17 @@ fun VoiceGroceryListScreen(navController: NavController) {
                 ) {
                     Button(
                         onClick = {
+                            // If already recording, stop the recognizer
+                            // onResults/onError will set isRecording = false via onRecognitionDone
+                            if (isRecording) {
+                                speechRecognizer.stopListening()
+                                return@Button
+                            }
+
                             // Request permission first
                             if (!hasPermission) {
                                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                // Labeled return: exits only the onClick lambda, not the whole function
+                                // Labeled return: exits only the onClick lambda, not the whole fn
                                 return@Button
                             }
 
@@ -202,7 +225,15 @@ fun VoiceGroceryListScreen(navController: NavController) {
 
                         Spacer(modifier = Modifier.size(8.dp))
 
-                        Text(if (isRecording) "Stop" else "Record")
+                        Text(
+                            if (isRecording) {
+                                // padStart ensures single digits get a leading zero (e.g. 7 → "07")
+                                // so the countdown always shows two digits like "0:07" instead of "0:7"
+                                "Stop (0:${remainingRecordingSeconds.toString().padStart(2, '0')})"
+                            } else {
+                                "Record"
+                            },
+                        )
                     }
                 }
             }
@@ -232,7 +263,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                 val backgroundColor by animateColorAsState(
                     targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.3F) else Color.Transparent,
                     animationSpec = tween(durationMillis = 500),
-                    label = "highlightedAnimation"
+                    label = "highlightedAnimation",
                 )
 
                 if (isHighlighted) {
