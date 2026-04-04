@@ -67,6 +67,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.navigation.NavController
+import com.caltlab.quickvox.emoji.EmojiResolver
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -83,6 +84,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
     var currRootMeanSquareDecibel by remember { mutableFloatStateOf(0f) }
 
     val context = LocalContext.current
+    val emojiResolver = remember { EmojiResolver.fromAssets(context) }
 
     // Checks on screen start if the app already has microphone permission (true/false)
     var hasPermission by remember {
@@ -298,7 +300,7 @@ fun VoiceGroceryListScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = item,
+                        text = emojiResolver.formatWithEmoji(item),
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = {
