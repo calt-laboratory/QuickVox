@@ -48,7 +48,7 @@ class EmojiResolver(private val emojiMap: Map<String, String>) {
     }
 
     private fun resolve(item: String) : String? {
-        val normalizedItem = item.trim().lowercase()
+        val normalizedItem = replaceGermanUmlauts(item.trim())
 
         // If not null, return value
         emojiMap[normalizedItem]?.let { return it }
@@ -59,6 +59,14 @@ class EmojiResolver(private val emojiMap: Map<String, String>) {
         }
 
         return null
+    }
+
+    private fun replaceGermanUmlauts(word: String): String {
+        return word.lowercase()
+            .replace("ä", "ae")
+            .replace("ö", "oe")
+            .replace("ü", "ue")
+            .replace("ß", "ss")
     }
 
     private fun stripPlural(word: String): String {
